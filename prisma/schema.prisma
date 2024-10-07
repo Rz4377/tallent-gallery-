@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  uid             String   @unique @id
+  name            String   
+  userId          String   @unique
+  email           String   @unique
+  createdAt       DateTime @default(now())
+
+  posts           Post[]
+  postReactions   PostReaction[] // for upvotes and downvotes
+  comments        Comment[]
+}
+
+model Post {
+  projectId          String    @unique @id  @default(cuid())
+  projectTitle       String    @unique
+  createdAt          DateTime  @default(now())
+  deleted            Boolean   @default(false)
+  uid                String
+
+  user               User      @relation(fields: [uid], references: [uid])
+  projectDesc        PostDescription?
+  reactions          PostReaction[]
+  comments           Comment[]
+
+  @@unique([uid, projectTitle])  
+}
+
+model PostDescription {
+  id          Int        @id @default(autoincrement())
+  projectId   String     @unique
+  description String
+  liveLink    String?
+  githubLink  String?
+  postImage   String?
+  postVideo   String?
+
+  post        Post       @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+}
+
+model PostReaction {
+  id          Int     @id @default(autoincrement())
+  projectId   String
+  uid         String
+  upvotes     Int     @default(0)
+  downvotes   Int     @default(0)
+
+  post        Post    @relation(fields: [projectId], references: [projectId])
+  user        User    @relation(fields: [uid], references: [uid])
+}
+
+model Comment {
+  commentId    Int      @id @default(autoincrement())
+  projectId    String
+  uid          String
+  content      String
+  createdAt    DateTime @default(now())
+
+  post         Post     @relation(fields: [projectId], references: [projectId])
+  user         User     @relation(fields: [uid], references: [uid])
+}
